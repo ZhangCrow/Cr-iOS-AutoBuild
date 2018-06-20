@@ -43,6 +43,7 @@ podInstall=false
 incrementEnabled=false
 backupIpaEnabled=false
 firEnabled=false
+nullValue=""
 
 # 提取选项参数
 while getopts 'd:e:m:pifbh' OPT;
@@ -262,6 +263,9 @@ then
     # App内提示打包时间 / 打包方式
     /usr/libexec/PlistBuddy -c "Set :CRAutoBuildDate ${autoBuildDate}" "${infoPlist}"
     /usr/libexec/PlistBuddy -c "Set :CRAutoBuildMethod ${method}" "${infoPlist}"
+else
+    /usr/libexec/PlistBuddy -c "Set :CRAutoBuildDate ${nullValue}" "${infoPlist}"
+    /usr/libexec/PlistBuddy -c "Set :CRAutoBuildMethod ${nullValue}" "${infoPlist}"
 fi
 # Build与出包路径
 exportName="${schemeNameIntact}_${configurationPrefix}_${methodName}_v${projVersion}_${projBuild}_${autoBuildDate}"
@@ -297,9 +301,11 @@ xcodebuild archive -workspace ${workspaceName}.xcworkspace \
                    PRODUCT_BUNDLE_IDENTIFIER="${bundleID}"
 
 # 还原Info.plist
-nullValue=""
-/usr/libexec/PlistBuddy -c "Set :CRAutoBuildDate ${nullValue}" "${infoPlist}"
-/usr/libexec/PlistBuddy -c "Set :CRAutoBuildMethod ${nullValue}" "${infoPlist}"
+if [ "$method" != "appstore" ]
+then
+    /usr/libexec/PlistBuddy -c "Set :CRAutoBuildDate ${nullValue}" "${infoPlist}"
+    /usr/libexec/PlistBuddy -c "Set :CRAutoBuildMethod ${nullValue}" "${infoPlist}"
+fi
 
 if [ ! -e "${archivePath}/${exportName}.xcarchive" ]
 then
