@@ -1,0 +1,26 @@
+inhibit_all_warnings!
+platform :ios, '9.0'
+
+# 源
+source 'https://github.com/CocoaPods/Specs.git'
+
+# 通用库
+def common_pods
+    pod 'Masonry', '~> 1.1.0'
+    pod 'SDWebImage'
+    pod 'AFNetworking'
+    pod 'YYModel'
+    pod 'YYText'
+    pod 'YYCache'
+    pod 'YYCategories'
+end
+
+# 开发调试工具
+def dev_tools
+    pod 'FHHFPSIndicator'
+end
+
+# Proj
+target 'CRSampleB' do
+    common_pods
+end
