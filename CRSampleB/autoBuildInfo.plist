@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- 工程名字(Target名字) -->
+	<key>projectName</key>
+	<string>CRSampleB</string>
+	<!-- Scheme名字(通用前缀) -->
+	<key>schemeNamePrefix</key>
+	<string>CRBScheme</string>
+	<!-- workspace名字 -->
+	<key>workspaceName</key>
+	<string>CRSampleB</string>
+	<!-- Bundle ID -->
+	<key>bundleID</key>
+	<string>com.cr.CRSampleB</string>
+	<!-- fir的帐户Token -->
+	<key>firToken</key>
+	<string>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</string>
+	<!-- AppStore 证书名 描述文件 等 -->
+	<key>AppStore_CodeSignIdentity</key>
+	<string>iPhone Distribution: XXXXXXXXXXX Technology Co., Ltd. (X0XXXXXXXX)</string>
+	<key>AppStore_ProvisioningProfileName</key>
+	<string>x0xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxx0x</string>
+	<key>AppStore_ExportOptionsPlist</key>
+	<string>./ExportOptions/ExportOptions_AppStore.plist</string>
+	<!-- AdHoc 证书名 描述文件 等 -->
+	<key>AdHoc_CodeSignIdentity</key>
+	<string>iPhone Distribution: XXXXXXXXXXX Technology Co., Ltd. (X0XXXXXXXX)</string>
+	<key>AdHoc_ProvisioningProfileName</key>
+	<string>x1xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxx1x</string>
+	<key>AdHoc_ExportOptionsPlist</key>
+	<string>./ExportOptions/ExportOptions_AdHoc.plist</string>
+	<!-- Development 证书名 描述文件 等 -->
+	<key>Dev_CodeSignIdentity</key>
+	<string>iPhone Developer: XXXXX (X2XXXXXXXX)</string>
+	<key>Dev_ProvisioningProfileName</key>
+	<string>x2xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxx2x</string>
+	<key>Dev_ExportOptionsPlist</key>
+	<string>./ExportOptions/ExportOptions_Dev.plist</string>
+</dict>
+</plist>
