@@ -2,7 +2,7 @@
 首先在此感谢飞腾和永胜在初版实现时给予的帮助与指导，以及小清同学提出的后续优化扩展建议。
 - - -
 随着公司技术团队的日益壮大和产品线项目的日渐繁多，CI 与 DailyBuild 就被提上了日程。
-本人最终采取的解决方案是：Jenkins + Shell脚本。Jenkins 负责定时触发和拉代码，脚本负责其他一切功能。脚本投入使用的四个月中，对其进行了扩展与优化，现开源给有需要的同学们，大家一同成长。
+本人最终采取的解决方案是：Jenkins + Shell脚本。Jenkins 负责定时触发和拉代码，脚本负责其他一切功能。脚本投入使用的四个月中，进行了一定的扩展与优化，现开源给有需要的同学们，大家一同成长。
 
 本工程只为展示脚本工具 autobuild.sh ，CRSampleA 和 CRSampleB 只是提供依赖设置的模板样例。脚本说明参见 [AUTOBUILD_README.md](https://github.com/ZhangCrow/Cr-iOS-AutoBuild/blob/master/AUTOBUILD_README.md)。实际使用中须注意 autobuild.sh 中的各种路径，以及 autoBuildInfo.plist 及各种ExportOptions.plist 中的描述文件与证书的正确配置。
 
