@@ -66,7 +66,7 @@ $ sh autobuild.sh -d CRSample -e uat -m dev -f
 # 预发布包：
 $ sh autobuild.sh -d CRSample -e prod -m adhoc -f
 # 生产包：
-$ sh autobuild.sh -d CRSample -e prod -m appstore -p
+$ sh autobuild.sh -d CRSample -e prod -m appstore -pi
 ```
 (PS: 由于非生产接口服务端不触发生产环境的极光推送，以及出于生产环境推送安全考虑，测试环境测试包不能以AdHoc的形式而只能以Development的形式打包。)
 
