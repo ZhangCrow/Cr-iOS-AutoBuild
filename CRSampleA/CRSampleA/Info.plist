@@ -18,6 +18,10 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>CRAutoBuildDate</key>
+	<string></string>
+	<key>CRAutoBuildMethod</key>
+	<string></string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -41,9 +45,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CRAutoBuildDate</key>
-	<string></string>
-	<key>CRAutoBuildMethod</key>
-	<string></string>
 </dict>
 </plist>
