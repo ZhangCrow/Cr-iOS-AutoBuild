@@ -41,5 +41,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>CRAutoBuildDate</key>
+	<string></string>
+	<key>CRAutoBuildMethod</key>
+	<string></string>
 </dict>
 </plist>
