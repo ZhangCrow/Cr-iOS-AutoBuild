@@ -1,9 +1,9 @@
 # Author By ZhangKr
-# Script Version: 2.1.0
-# The Latest Edited Date: 2018/06/20 15:00
+# Script Version: 2.3.4
+# The Latest Edited Date: 2019/11/07 16:20
 
 # 注意：脚本文件应和项目文件夹在同一目录下/且工程中已配置好autoBuildInfo.plist和ExportOptions文件
-# 执行文件Eg: sh autobuild.sh -d CRSample -e uat -m adhoc -pfb
+# 执行文件Eg: sh autobuild.sh -d HHSample -e uat -m adhoc -f -b
 # ⚠️注意：脚本中有一行切换路径的命令“cd ${projDirName}”，该命令执行后请确认所有相对路径的正确性
 
 export LANG=en_US.UTF-8
@@ -11,50 +11,60 @@ export LANGUAGE=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
 # 帮助文档 与 使用说明
-helpTipD="[-d <dirName>] This's the folder name for the target project.
-Required option. Please enter the correct folder name.\n"
-helpTipE="[-e <env>] This's the option to select the interface environment.
-    prod    => Prod API Env
-    uat     => UAT API Env
-    dev     => Dev API Env
-Required option. Please enter the correct option.\n"
-helpTipM="[-m <method>] This's the option to select the deployment method option.
-    appstore    => App Store Deployment
-    adhoc       => Ad Hoc Deployment
-    dev         => Development Deployment
-Required option. Please enter the correct option.\n"
-helpTipP="[-p] This's the switch to control whether or not to run \`pod install\`.
-Optional option. This option does't require parameters.\n"
-helpTipI="[-i] This's the switch to control whether or not to increment build number with \"appstore\" mode.
-Optional option. This option does't require parameters.\n"
-helpTipF="[-f] This's the switch to control whether or not to run \`fir publish\`.
-Optional option. This option does't require parameters.\n"
-helpTipB="[-b] This's the switch to control whether or not to backup the .ipa file.
-Optional option. This option does't require parameters.\n"
+helpTipD="[-d <dirName>] 目标工程xcworkspace文件所在文件夹名称。
+必填项，请输入正确的文件夹名称。\n"
+helpTipT="[-t <targetFlag>] 所要读取的autoBuildInfo文件的标签(工程多Targets的场景)。
+选填项，若未填，则会尝试读取\"autoBuildInfo.plist\"。\n"
+helpTipE="[-e <env>] 选择接口环境。
+    prod => 生产环境
+    uat  => 测试环境
+    dev  => 开发环境
+必填项，请输入正确的选项名称。\n"
+helpTipM="[-m <method>] 选择打包方式。
+    appstore => App Store Deployment
+    adhoc    => Ad Hoc Deployment
+    dev      => Development Deployment
+必填项，请输入正确的选项名称。\n"
+helpTipU="[-u] 更新描述文件。
+可选项，此选项不需要参数，使用此项即开启功能。\n"
+helpTipP="[-p] 执行 \`pod install\`。
+可选项，此选项不需要参数，使用此项即开启功能。\n"
+helpTipI="[-i] 在选择\"appstore\"打包方式时启用build号自增。
+可选项，此选项不需要参数，使用此项即开启功能。\n"
+helpTipF="[-f] 出包成功后执行 \`fir publish\`。
+可选项，此选项不需要参数，使用此项即开启功能。\n"
+helpTipB="[-b] 出包成功后备份.ipa文件。
+可选项，此选项不需要参数，使用此项即开启功能。\n"
 helpString="
-usage: sh autobuild.sh -d <dirName> -e <env> -m <method> -p -f -b
-example: sh autobuild.sh -d CRSample -e uat -m adhoc -pfb \n${helpTipD}\n${helpTipE}\n${helpTipM}\n${helpTipP}\n${helpTipI}\n${helpTipF}\n${helpTipB}"
+使用方式: \$sh autobuild.sh -d <dirName> -t <targetFlag> -e <env> -m <method> -p -f -b
+举个例子: \$sh autobuild.sh -d HHSample -e uat -m adhoc -upfb
+ \n${helpTipD} \n${helpTipT} \n${helpTipE} \n${helpTipM} \n${helpTipU} \n${helpTipP} \n${helpTipI} \n${helpTipF} \n${helpTipB}"
 
 # 参数
 configurationPrefix="Release"
-projAutoBuildInfo="autoBuildInfo.plist"
 
+useGitSvn=false
 podInstall=false
+updateMobileProvisionEnabled=false
 incrementEnabled=false
 backupIpaEnabled=false
 firEnabled=false
 nullValue=""
 
 # 提取选项参数
-while getopts 'd:e:m:pifbh' OPT;
+while getopts 'd:t:e:m:upifbh' OPT;
 do
     case $OPT in
         d)
         projDirName="$OPTARG";;
+        t)
+        targetFlag="$OPTARG";;
         e)
         apiEnv="$OPTARG";;
         m)
         method="$OPTARG";;
+        u)
+        updateMobileProvisionEnabled=true;;
         p)
         podInstall=true;;
         i)
@@ -62,9 +72,9 @@ do
         f)
         firEnabled=true;;
         b)
-		backupIpaEnabled=true;;
-		h)
-		showHelp=true;;
+        backupIpaEnabled=true;;
+        h)
+        showHelp=true;;
         ?)
         echo "`basename $0`: Unrecognized commands. See 'sh `basename $0` -help'."
         exit 1;;
@@ -73,8 +83,17 @@ done
 
 if [ $showHelp ]
 then
-	echo "$helpString"
-	exit 0
+    echo "$helpString"
+    exit 0
+fi
+
+# 选项参数判断 —— [-t <targetFlag>]
+# 判读用户是否有输入
+if [ -n "$targetFlag" ]
+then
+    projAutoBuildInfo="autoBuildInfo_${targetFlag}.plist"
+else
+    projAutoBuildInfo="autoBuildInfo.plist"
 fi
 
 # 选项参数判断 —— [-d <dirName>]
@@ -83,24 +102,19 @@ if [ -n "$projDirName" ]
 then
     if [ -d "./${projDirName}" ] && [ -f "./${projDirName}/${projAutoBuildInfo}" ]
     then
-    	# 提取项目参数及配置
+        # 提取项目参数及配置
         buildPlist=./${projDirName}/${projAutoBuildInfo}
         projectName=$(/usr/libexec/PlistBuddy -c "Print :projectName" "${buildPlist}")
+        targetName=$(/usr/libexec/PlistBuddy -c "Print :targetName" "${buildPlist}")
         schemeNamePrefix=$(/usr/libexec/PlistBuddy -c "Print :schemeNamePrefix" "${buildPlist}")
         workspaceName=$(/usr/libexec/PlistBuddy -c "Print :workspaceName" "${buildPlist}")
         bundleID=$(/usr/libexec/PlistBuddy -c "Print :bundleID" "${buildPlist}")
         firToken=$(/usr/libexec/PlistBuddy -c "Print :firToken" "${buildPlist}")
-        AppStore_CodeSignIdentity=$(/usr/libexec/PlistBuddy -c "Print :AppStore_CodeSignIdentity" "${buildPlist}")
-        AppStore_ProvisioningProfileName=$(/usr/libexec/PlistBuddy -c "Print :AppStore_ProvisioningProfileName" "${buildPlist}")
         AppStore_ExportOptionsPlist=$(/usr/libexec/PlistBuddy -c "Print :AppStore_ExportOptionsPlist" "${buildPlist}")
-        AdHoc_CodeSignIdentity=$(/usr/libexec/PlistBuddy -c "Print :AdHoc_CodeSignIdentity" "${buildPlist}")
-        AdHoc_ProvisioningProfileName=$(/usr/libexec/PlistBuddy -c "Print :AdHoc_ProvisioningProfileName" "${buildPlist}")
         AdHoc_ExportOptionsPlist=$(/usr/libexec/PlistBuddy -c "Print :AdHoc_ExportOptionsPlist" "${buildPlist}")
-        Dev_CodeSignIdentity=$(/usr/libexec/PlistBuddy -c "Print :Dev_CodeSignIdentity" "${buildPlist}")
-        Dev_ProvisioningProfileName=$(/usr/libexec/PlistBuddy -c "Print :Dev_ProvisioningProfileName" "${buildPlist}")
         Dev_ExportOptionsPlist=$(/usr/libexec/PlistBuddy -c "Print :Dev_ExportOptionsPlist" "${buildPlist}")
     else
-        echo "[-d <dirName>]参数无效...."
+        echo "请检查[-d <dirName>]及[-t <targetFlag>]参数是否有效...."
         echo "请检查项目文件夹名称以及文件夹中是否存在${projAutoBuildInfo}文件...."
         echo "$helpTipD"
         exit 1
@@ -152,8 +166,6 @@ then
 # AppStore脚本
             methodName="AppStore"
             configurationSuffix=""
-            CODE_SIGN_IDENTITY=${AppStore_CodeSignIdentity}
-            PROVISIONING_PROFILE_NAME=${AppStore_ProvisioningProfileName}
             EXPORT_OPTIONS_PLIST=${AppStore_ExportOptionsPlist}
             # appStore的打包方式没有备份和Fir发布的必要
             backupIpaEnabled=false
@@ -167,15 +179,11 @@ then
     then
 # AdHoc脚本
         methodName="AdHoc"
-        CODE_SIGN_IDENTITY=${AdHoc_CodeSignIdentity}
-        PROVISIONING_PROFILE_NAME=${AdHoc_ProvisioningProfileName}
         EXPORT_OPTIONS_PLIST=${AdHoc_ExportOptionsPlist}
     elif [ "$method" == "dev" ]
     then
 # 开发打包脚本
         methodName="Development"
-        CODE_SIGN_IDENTITY=${Dev_CodeSignIdentity}
-        PROVISIONING_PROFILE_NAME=${Dev_ProvisioningProfileName}
         EXPORT_OPTIONS_PLIST=${Dev_ExportOptionsPlist}
     else
         echo "[-m <method>]参数无效...."
@@ -188,23 +196,19 @@ else
     exit 1
 fi
 
-# # 检查autoBuildInfo.plist
-# echo "Get the build info from the plist.
-#     projectName = ${projectName}
-#     schemeNamePrefix = ${schemeNamePrefix}
-#     workspaceName = ${workspaceName}
-#     bundleID = ${bundleID}
-#     firToken = ${firToken}
-#     AppStore_CodeSignIdentity = ${AppStore_CodeSignIdentity}
-#     AppStore_ProvisioningProfileName = ${AppStore_ProvisioningProfileName}
-#     AppStore_ExportOptionsPlist = ${AppStore_ExportOptionsPlist}
-#     AdHoc_CodeSignIdentity = ${AdHoc_CodeSignIdentity}
-#     AdHoc_ProvisioningProfileName = ${AdHoc_ProvisioningProfileName}
-#     AdHoc_ExportOptionsPlist = ${AdHoc_ExportOptionsPlist}
-#     Dev_CodeSignIdentity = ${Dev_CodeSignIdentity}
-#     Dev_ProvisioningProfileName = ${Dev_ProvisioningProfileName}
-#     Dev_ExportOptionsPlist = ${Dev_ExportOptionsPlist}
-# "
+# 检查autoBuildInfo.plist
+echo "—————————————— 确认 autoBuildInfo ———————————————
+    buildPlist = ${buildPlist}
+    projectName = ${projectName}
+    targetName = ${targetName}
+    schemeNamePrefix = ${schemeNamePrefix}
+    workspaceName = ${workspaceName}
+    bundleID = ${bundleID}
+    firToken = ${firToken}
+    AppStore_ExportOptionsPlist = ${AppStore_ExportOptionsPlist}
+    AdHoc_ExportOptionsPlist = ${AdHoc_ExportOptionsPlist}
+    Dev_ExportOptionsPlist = ${Dev_ExportOptionsPlist}
+"
 
 schemeNameIntact="${schemeNamePrefix}${schemeNameSuffix}"
 configurationIntact="${configurationPrefix}${configurationSuffix}"
@@ -214,50 +218,36 @@ echo "Scheme         : ${schemeNameIntact}"
 echo "Configuration  : ${configurationIntact}"
 echo "Deployment     : ${methodName}"
 echo ""
-# echo "—————————————————————————————————————————————————"
 
-# # if used SVN
-# if [ -d ".svn" ]
-#         then
-#         svn upgrade
-# fi
+if [ -d ".svn" ]
+        then
+        svn upgrade
+fi
 
-# 编译与打包
+# 准备编译与打包
 cd ${projDirName}
 # 执行这行代码过后，以下路径均是相对项目文件夹的
 
 # 读取版本号
-infoPlist=./${workspaceName}/Info.plist
+infoPlist="./${workspaceName}/Info.plist"
 projVersion=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "${infoPlist}")
 projBuild=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "${infoPlist}")
+
+echo "————————————————————— 版本确认 ——————————————————————"
+echo "infoPlist         : ${infoPlist}"
+echo "projVersion       : ${projVersion}"
+echo "projBuild         : ${projBuild}"
+echo ""
+
 if [ "$method" == "appstore" ] && [ $incrementEnabled == true ]
 then
     # 若为AppStore，build自增
     projBuild=`expr $projBuild + 1`
     /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${projBuild}" "${infoPlist}"
-    commitLog="[AutoBuild] Build number increment by script. [${schemeNamePrefix}] Build: ${projBuild}"
-    # if used Git
-    if [ -d "../.git" ]
-        then
-        git add ${infoPlist}
-        git commit -m "${commitLog}"
-        git push origin production
-    fi
-    # # if used SVN
-    # if [ -d "../.svn" ]
-    #     then
-    #     svn commit -m "${commitLog}" ${infoPlist}
-    # elif [ -d "../.git" ]
-    #     then
-    #     git add ${infoPlist}
-    #     git commit -m "${commitLog}"
-    #     git svn dcommit --rmdir
-    # fi
-    echo "___${commitLog}"
 fi
 
 # 导出.ipa文件命名时拼接时间
-autoBuildDate=`date +"%y%m%d%H"`
+autoBuildDate=`date +"%y%m%d%H%M"`
 if [ "$method" != "appstore" ]
 then
     # App内提示打包时间 / 打包方式
@@ -273,20 +263,53 @@ exportDir="../../iOS-Build"
 if [ "$method" == "appstore" ]
 then
     # AppStore包出包路径
-    archivePath="${exportDir}/AppStore"
-    ipaPath="${exportDir}/AppStore"
+    archiveDir="${exportDir}/AppStore"
+    ipaDir="${exportDir}/AppStore"
 else
     # 任何测试包出包路径
-    archivePath="${exportDir}/${schemeNamePrefix}"
-    ipaPath="${exportDir}/${schemeNamePrefix}"
+    archiveDir="${exportDir}/${schemeNamePrefix}"
+    ipaDir="${exportDir}/${schemeNamePrefix}"
+fi
+
+# 执行MobileProvision更新
+if [ $updateMobileProvisionEnabled == true ]
+then
+    provisionDir="./MobileProvision"
+    echo "——————————————— 更新 <MobileProvision> ————————————————"
+    echo "Current Path: $(pwd)"
+    if [ -d ${provisionDir} ]
+    then
+        for file in ${provisionDir}/*
+        do
+            if test -f ${file}
+            then
+                open ${file}
+                echo "Open file:    ${file}"
+            fi
+        done
+    else
+        echo "Not found the dir: ${provisionDir}"
+    fi
 fi
 
 # 执行pod install
 if [ $podInstall == true ]
 then
-    echo "——————————————— running <pod install> ————————————————"
+    echo "——————————————— 执行 <pod install> ————————————————"
     pod install
 fi
+
+archivePath="${archiveDir}/${exportName}.xcarchive"
+
+echo "——————————————— 确认 xcodebuild  ————————————————
+xcodebuild clean -workspace ${workspaceName}.xcworkspace
+                 -scheme ${schemeNameIntact}
+                 -configuration ${configurationIntact}\n
+xcodebuild archive -workspace ${workspaceName}.xcworkspace
+                   -scheme ${schemeNameIntact}
+                   -configuration ${configurationIntact}
+                   -archivePath ${archivePath}"
+echo ""
 
 xcodebuild clean -workspace ${workspaceName}.xcworkspace \
                  -scheme ${schemeNameIntact} \
@@ -295,10 +318,7 @@ xcodebuild clean -workspace ${workspaceName}.xcworkspace \
 xcodebuild archive -workspace ${workspaceName}.xcworkspace \
                    -scheme ${schemeNameIntact} \
                    -configuration ${configurationIntact} \
-                   -archivePath ${archivePath}/${exportName}.xcarchive archive build \
-                   CODE_SIGN_IDENTITY="${CODE_SIGN_IDENTITY}" \
-                   PROVISIONING_PROFILE="${ROVISIONING_PROFILE_NAME}" \
-                   PRODUCT_BUNDLE_IDENTIFIER="${bundleID}"
+                   -archivePath ${archivePath} \
 
 # 还原Info.plist
 if [ "$method" != "appstore" ]
@@ -307,41 +327,88 @@ then
     /usr/libexec/PlistBuddy -c "Set :CRAutoBuildMethod ${nullValue}" "${infoPlist}"
 fi
 
-if [ ! -e "${archivePath}/${exportName}.xcarchive" ]
+if [ ! -e "${archivePath}" ]
 then
     echo "Current Path: $(pwd)"
-    echo "Not found the archive file: ${archivePath}/${exportName}.xcarchive"
+    echo "Not found the archive file: ${archivePath}"
     exit 1
 fi
 
-xcodebuild -exportArchive -archivePath ${archivePath}/${exportName}.xcarchive \
+echo "——————————————— 确认 xcodebuild  ————————————————
+xcodebuild -exportArchive -archivePath ${archivePath} 
+                          -exportOptionsPlist ${EXPORT_OPTIONS_PLIST} 
+                          -exportPath ${ipaDir}/${exportName}"
+echo ""
+
+xcodebuild -exportArchive -archivePath ${archivePath} \
                           -exportOptionsPlist ${EXPORT_OPTIONS_PLIST} \
-                          -exportPath ${ipaPath}/${exportName}
-if [ ! -e "${ipaPath}/${exportName}/${schemeNameIntact}.ipa" ]
+                          -exportPath ${ipaDir}/${exportName} \
+
+ipaPath="${ipaDir}/${exportName}/${schemeNameIntact}.ipa"
+
+if [ ! -e "${ipaPath}" ]
 then
     echo "Current Path: $(pwd)"
-    echo "Not found dir: ${ipaPath}/${exportName}/${schemeNameIntact}.ipa"
+    echo "Not found the file: ${ipaPath}"
     exit 1
+else
+    # 出包成功才判断是否要提交改动
+    if [ "$method" == "appstore" ] && [ $incrementEnabled == true ]
+    then
+        # 若为AppStore，build自增 的提交
+        commitLog="autobuild: [${schemeNamePrefix}] BuildNum: ${projBuild}"
+        if [ -d "../.svn" ]
+            then
+            svn commit -m "${commitLog}" ${infoPlist}
+        elif [ -d "../.git" ]
+            then
+            git add ${infoPlist}
+            git commit -m "${commitLog}"
+            git checkout .
+            if [ $useGitSvn == true ]
+                then
+                git svn dcommit --rmdir
+            else
+                branchName=$(git symbolic-ref --short -q HEAD)
+                echo "current loacl branch name: ${branchName}"
+                git fetch origin ${branchName}
+                git rebase origin/${branchName}
+                git push origin ${branchName}
+            fi
+        fi
+        echo "___${commitLog}"
+    fi
+    echo "包文件路径: ${ipaPath}"
 fi
 
 # 拷贝ipa文件到固定目录，以供自动化测试
 if [ $backupIpaEnabled == true ]
 then
-	echo "——————————————— 正在备份.ipa文件 ————————————————"
-	backupPath="${exportDir}/Latest/${schemeNamePrefix}"
-	rm -rf "${backupPath}"
-	mkdir -p "${backupPath}"
-	cp -R -f -p "${ipaPath}/${exportName}/${schemeNameIntact}.ipa" \
-			"${backupPath}/${schemeNamePrefix}.ipa"
+    echo "——————————————— 备份 .ipa 文件 ————————————————"
+    backupPath="${exportDir}/Latest/${schemeNamePrefix}"
+    rm -rf "${backupPath}"
+    mkdir -p "${backupPath}"
+    cp -R -f -p "${ipaPath}" \
+            "${backupPath}/${schemeNamePrefix}.ipa"
 fi
 
-# 上传至fir
+# 自动上传至iTunesConnect
+if [ "$method" == "appstore" ]
+then
+    echo "——————————————— 上传到 iTunes Connect ————————————————"
+    appleID="your-apple-id@gmail.com"
+    applePassword="xxxx-xxxx-xxxx-xxxx"
+    # 验证信息
+    xcrun altool --validate-app -f "${ipaPath}" -t iOS -u "${appleID}" -p "${applePassword}" --output-format xml
+    #上传iTunesConnect
+    xcrun altool --upload-app -f "${ipaPath}" -u "${appleID}" -p "${applePassword}" --output-format xml
+fi
+
+# 上传至fir 若不需要上传 删除以下代码即可
 if [ $firEnabled == true ]
 then
-    firChangeLog="${exportName} \n\nUploaded by cr plugin"
-    export LANG=en_US
-    export LC_ALL=en_US;
-    echo "——————————————— 正在上传到fir.im ————————————————"
+    firChangeLog="${exportName} \n\nUploaded by hht plugin"
+    echo "——————————————— 上传到 fir.im ————————————————"
     fir login ${firToken}
-    fir publish ${ipaPath}/${exportName}/${schemeNameIntact}.ipa --changelog=${firChangeLog}
+    fir publish ${ipaPath} --changelog=${firChangeLog}
 fi

@@ -1,7 +1,7 @@
 # CrProjs_Autobuild.sh Direction 
 ## iOS产品线-多项目自定义-自动编译打包脚本使用说明
 
-> The Latest Edited Date: 2018/06/20 15:00
+> The Latest Edited Date: 2019/11/07 16:20
 >
 > 本说明旨在为当前目录下autobuild.sh脚本的日常使用与维护尽可能的提供指导与帮助。
 > 如需维护或新增项目支持，建议通读本文档和脚本文件，特别是【(二)脚本解析】章节。
@@ -13,35 +13,41 @@
 ### (一) 使用说明
 #### 帮助提示
 ```shell
-usage: sh autobuild.sh -d <dirName> -e <env> -m <method> -p -f -b
-example: sh autobuild.sh -d CRSample -e uat -m adhoc -pfb
+使用方式: $sh autobuild.sh -d <dirName> -t <targetFlag> -e <env> -m <method> -p -f -b
+举个例子: $sh autobuild.sh -d CRSample -e uat -m adhoc -upfb
 
-[-d <dirName>] This's the folder name for the target project.
-Required option. Please enter the correct folder name.
-
-[-e <env>] This's the option to select the interface environment.
-    prod    => Prod API Env
-    uat     => UAT API Env
-    dev     => Dev API Env
-Required option. Please enter the correct option.
-
-[-m <method>] This's the option to select the deployment method option.
-    appstore    => App Store Deployment
-    adhoc       => Ad Hoc Deployment
-    dev         => Development Deployment
-Required option. Please enter the correct option.
-
-[-p] This's the switch to control whether or not to run `pod install`.
-Optional option. This option does't require parameters.
-
-[-i] This's the switch to control whether or not to increment build number with "appstore" mode.
-Optional option. This option does't require parameters.
-
-[-f] This's the switch to control whether or not to run `fir publish`.
-Optional option. This option does't require parameters.
-
-[-b] This's the switch to control whether or not to backup the .ipa file.
-Optional option. This option does't require parameters.
+[-d <dirName>] 目标工程xcworkspace文件所在文件夹名称。
+必填项，请输入正确的文件夹名称。
+ 
+[-t <targetFlag>] 所要读取的autoBuildInfo文件的标签(工程多Targets的场景)。
+选填项，若未填，则会尝试读取"autoBuildInfo.plist"。
+ 
+[-e <env>] 选择接口环境。
+    prod => 生产环境
+    uat  => 测试环境
+    dev  => 开发环境
+必填项，请输入正确的选项名称。
+ 
+[-m <method>] 选择打包方式。
+    appstore => App Store Deployment
+    adhoc    => Ad Hoc Deployment
+    dev      => Development Deployment
+必填项，请输入正确的选项名称。
+ 
+[-u] 更新描述文件。
+可选项，此选项不需要参数，使用此项即开启功能。
+ 
+[-p] 执行 `pod install`。
+可选项，此选项不需要参数，使用此项即开启功能。
+ 
+[-i] 在选择"appstore"打包方式时启用build号自增。
+可选项，此选项不需要参数，使用此项即开启功能。
+ 
+[-f] 出包成功后执行 `fir publish`。
+可选项，此选项不需要参数，使用此项即开启功能。
+ 
+[-b] 出包成功后备份.ipa文件。
+可选项，此选项不需要参数，使用此项即开启功能。
 ```
 
 #### 参数说明
@@ -50,8 +56,10 @@ Optional option. This option does't require parameters.
 | 参数 | 必传/选传 | 支持选项 | 描述 | 
 | :---: | :-----: | :---------: | :---------: | 
 | -d | ==必传== | 任意字符串 | 项目根目录文件夹名称 | 
+| -t | 选传 | 任意字符串 | autoBuildInfo文件标签 | 
 | -e | ==必传== | prod, uat, dev | 项目的接口环境 | 
 | -m | ==必传== | appstore, adhoc, dev | 项目的打包方式 | 
+| -u | 选传 | - | 是否更新描述文件，默认不执行 | 
 | -p | 选传 | - | 是否执行Pod安装，默认不执行 | 
 | -i | 选传 | - | 是否执行buildNo.自增(仅appstore模式下生效)，默认不执行 | 
 | -f | 选传 | - | 是否执行Fir发布，默认不执行 | 
@@ -154,6 +162,32 @@ $ gem install fir-cli
 > 如果需要fir发布，将ipa文件发布到fir平台。
 
 ### (三) 更新日志
+> **v2.3.4**
+> 优化提交build号自增的方式，防止因其他文件也有改动发生合并冲突而提交失败。
+> 适配Xcode11，AppStore打包方式提交工具改为xcrun altool。
+
+> **v2.3.3**
+> 修改BuildNumber自增后的提交信息格式。
+
+> **v2.3.2**
+> 修复修改触发build号自增引发的bug(出包文件名比工程实际build号落后1)。
+> 测试环境出包版本信息描述时间追加分钟精确度，为将来hook做准备。
+
+> **v2.3.1**
+> 添加Git支持。
+> 改变提交build号自增的执行时机，如有必要出包成功才会提交。
+> 修复archive重复执行，build的不必要执行。
+> 脚本内使用帮助与提示改为中文。
+
+> **v2.3.0**
+> 若为AppStore打包方式，打包成功后会自动上传至iTunesConnect。
+
+> **v2.2.1**
+> 新增`[-u]`命令，以支持自动更新描述文件。
+
+> **v2.2.0**
+> 新增`[-t]`命令，以支持同一工程多Targets定向打包。
+
 > **v2.1.0**
 > 原`[-p]`命令改为`[-d]`。
 > 新增`[-p]`命令，以灵活控制是否执行`pod install`命令。
